@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 _tmpl_dir = os.path.join(os.path.dirname(__file__), "templates")
 app = Flask(__name__, template_folder=_tmpl_dir)
 
+# Start background monitoring when loaded by Gunicorn or directly.
+# Skipped during pytest runs (PYTEST_CURRENT_TEST is set automatically by pytest).
+if not os.environ.get("PYTEST_CURRENT_TEST"):
+    start_monitoring(interval_seconds=30)
+
 # --------------------------------------------------------------------------- #
 #  Routes
 # --------------------------------------------------------------------------- #
@@ -92,5 +97,4 @@ def metrics_summary():
 # --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
-    start_monitoring(interval_seconds=60)
     app.run(host="0.0.0.0", port=5000, debug=False)

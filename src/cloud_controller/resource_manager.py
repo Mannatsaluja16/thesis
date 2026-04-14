@@ -9,11 +9,11 @@ _lock = threading.Lock()
 
 _servers: Dict[str, dict] = {
     f"server_{i:02d}": {
-        "server_id":  f"server_{i:02d}",
-        "cpu":        20.0 + i * 3,
-        "mem":        30.0 + i * 2,
-        "status":     "healthy",
-        "vms":        [],
+        "server_id":    f"server_{i:02d}",
+        "cpu":          round(2.0 + i * 0.6, 1),   # 2.6 – 8.0 %  (matches real VM dataset)
+        "mem":          round(5.0 + i * 1.5, 1),   # 6.5 – 20.0 % (matches real VM dataset)
+        "status":       "healthy",
+        "vms":          [],
     }
     for i in range(1, 11)
 }
