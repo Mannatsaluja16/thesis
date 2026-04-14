@@ -53,7 +53,7 @@ def _log_event(event_type: str, details: str):
         writer.writerow([datetime.utcnow().isoformat(), event_type, details])
 
 
-_replay: np.ndarray | None = None  # (500, 10, 5) — real Kaggle test sequences
+_replay = None  # type: np.ndarray or None  — (500, 10, 5) real Kaggle test sequences
 _replay_cursor: int = 0            # next sequence index to assign
 
 
