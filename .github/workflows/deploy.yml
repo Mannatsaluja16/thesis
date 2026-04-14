@@ -1,0 +1,58 @@
+name: Test and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate synthetic data & train model
+        run: |
+          python src/data_collector/synthetic_generator.py
+          python src/data_collector/preprocessor.py
+          python src/fault_prediction/train.py
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --cov=src --cov-report=term-missing
+
+      - name: Run integration tests
+        run: pytest tests/integration/ -v
+
+      - name: Run performance tests
+        run: pytest tests/performance/test_api_response_time.py -v --tb=short
+
+      - name: Deploy to EC2
+        if: success()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host:        ${{ secrets.EC2_HOST }}
+          username:    ec2-user
+          key:         ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/app
+            git pull origin main
+            pip3 install -r requirements.txt
+            python3 src/data_collector/synthetic_generator.py
+            python3 src/data_collector/preprocessor.py
+            python3 src/fault_prediction/train.py
+            sudo systemctl restart fault_tolerance_app
+
+      - name: Health check
+        if: success()
+        run: |
+          sleep 15
+          curl --fail http://${{ secrets.EC2_HOST }}/metrics/summary

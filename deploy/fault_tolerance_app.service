@@ -1,0 +1,14 @@
+[Unit]
+Description=Fault Tolerance Flask App
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/app
+EnvironmentFile=/home/ec2-user/app/.env
+ExecStart=/usr/local/bin/gunicorn -w 2 -b 127.0.0.1:5000 src.cloud_controller.api_gateway:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+boto3
+python-dotenv
+torch
+scikit-learn
+pandas
+numpy
+matplotlib
+seaborn
+flask
+gunicorn
+pytest
+pytest-cov
+locust
+requests
