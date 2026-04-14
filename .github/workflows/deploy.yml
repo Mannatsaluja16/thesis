@@ -20,12 +20,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate synthetic data & train model
-        run: |
-          python src/data_collector/synthetic_generator.py
-          python src/data_collector/preprocessor.py
-          python src/fault_prediction/train.py
-
       - name: Run unit tests
         run: pytest tests/unit/ -v --cov=src --cov-report=term-missing
 
@@ -45,10 +39,8 @@ jobs:
           script: |
             cd /home/ec2-user/app
             git pull origin main
-            pip3 install -r requirements.txt
-            python3 src/data_collector/synthetic_generator.py
-            python3 src/data_collector/preprocessor.py
-            python3 src/fault_prediction/train.py
+            pip3 install torch --index-url https://download.pytorch.org/whl/cpu -q
+            pip3 install -r requirements-deploy.txt -q
             sudo systemctl restart fault_tolerance_app
 
       - name: Health check
