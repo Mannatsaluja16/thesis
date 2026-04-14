@@ -88,6 +88,17 @@ def _poll_once():
 
     servers = get_all_servers()
 
+    # Recover QUARANTINED servers back to healthy each cycle so the active
+    # pool never drains and faults keep appearing in subsequent cycles.
+    for server_id, state in servers.items():
+        if state["status"] == "QUARANTINED":
+            update_server_state(server_id, {"status": "healthy"})
+            _log_event("RECOVERED", f"server={server_id} auto-recovered to healthy")
+            logger.info("Server %s auto-recovered to healthy", server_id)
+
+    # Re-fetch after recovery so we process the full fleet
+    servers = get_all_servers()
+
     for server_id, state in servers.items():
         if state["status"] not in ("healthy", "at-risk"):
             continue
