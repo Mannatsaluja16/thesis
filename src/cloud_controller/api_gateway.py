@@ -16,8 +16,8 @@ _tmpl_dir = os.path.join(os.path.dirname(__file__), "templates")
 app = Flask(__name__, template_folder=_tmpl_dir)
 
 # Start background monitoring when loaded by Gunicorn or directly.
-# Skipped during pytest runs (PYTEST_CURRENT_TEST is set automatically by pytest).
-if not os.environ.get("PYTEST_CURRENT_TEST"):
+# Skipped during pytest/CI runs (DISABLE_MONITORING is set in tests/conftest.py).
+if not os.environ.get("DISABLE_MONITORING"):
     start_monitoring(interval_seconds=30)
 
 # --------------------------------------------------------------------------- #
