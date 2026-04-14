@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- UPDATED: About + Architecture + Deployment + Quick-fill + VMs tooltip -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,6 +7,7 @@
   <title>AI Fault Tolerance Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/jointjs@3.7.7/dist/joint.min.css" rel="stylesheet" />
   <style>
     :root {
       --brand: #4f46e5;
@@ -252,23 +254,71 @@
     /* ── Empty state ── */
     .empty-state { text-align:center; padding: 2rem; color: var(--text-muted); font-size: 0.88rem; }
     .empty-state i { font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.4; }
+
+    /* ── Page nav ── */
+    .nav-link-pg { color: var(--text-muted) !important; font-size: 0.83rem; font-weight: 600; padding: 0.35rem 0.8rem !important; border-radius: 8px; transition: background 0.15s, color 0.15s; }
+    .nav-link-pg:hover, .nav-link-pg.active { background: rgba(79,70,229,0.18); color: var(--brand-light) !important; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Quick-fill chips ── */
+    .quick-chip { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; background: rgba(79,70,229,0.1); border: 1px solid rgba(129,140,248,0.25); border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; color: var(--brand-light); transition: background 0.15s; user-select: none; }
+    .quick-chip:hover { background: rgba(79,70,229,0.25); }
+
+    /* ── About / Architecture / Deployment ── */
+    .layer-block { border-left: 3px solid var(--brand); padding: 0.7rem 1rem; margin-bottom: 0.9rem; background: rgba(79,70,229,0.06); border-radius: 0 10px 10px 0; }
+    .layer-block .layer-name { font-weight: 700; font-size: 0.88rem; color: var(--brand-light); margin-bottom: 0.25rem; }
+    .layer-block .layer-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; }
+    .metric-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 3px 10px; font-size: 0.78rem; color: #34d399; margin: 2px; }
+    .metric-pill.sky    { background: rgba(14,165,233,0.1);  border-color: rgba(14,165,233,0.25);  color: #38bdf8; }
+    .metric-pill.amber  { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.25);  color: #fcd34d; }
+    .metric-pill.violet { background: rgba(139,92,246,0.1);  border-color: rgba(139,92,246,0.25);  color: #a78bfa; }
+    .dep-row { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.55rem 0; border-bottom: 1px solid rgba(51,65,85,0.4); }
+    .dep-row:last-child { border-bottom: none; }
+    .dep-key { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; min-width: 145px; flex-shrink: 0; }
+    .dep-val { font-size: 0.84rem; color: var(--text-main); font-family: monospace; word-break: break-all; }
+    .dep-tag { display: inline-block; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #34d399; border-radius: 6px; padding: 2px 8px; font-size: 0.74rem; font-family: monospace; margin: 2px; }
+    .dep-tag.amber  { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.25);  color: #fcd34d; }
+    .dep-tag.sky    { background: rgba(14,165,233,0.1);  border-color: rgba(14,165,233,0.25);  color: #38bdf8; }
+    .dep-tag.violet { background: rgba(139,92,246,0.1);  border-color: rgba(139,92,246,0.25);  color: #a78bfa; }
+    .dep-tag.rose   { background: rgba(244,63,94,0.1);   border-color: rgba(244,63,94,0.25);   color: #fb7185; }
+    .ci-step { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.8rem; background: rgba(79,70,229,0.07); border-radius: 8px; margin-bottom: 0.4rem; font-size: 0.82rem; }
+    .ci-step i { color: var(--brand-light); flex-shrink: 0; }
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .results-table th { background: rgba(79,70,229,0.1); color: var(--brand-light); font-weight: 700; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.7px; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--card-border); }
+    .results-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(51,65,85,0.4); }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table .best  { color: #34d399; font-weight: 700; }
+    .results-table .worst { color: #f87171; }
+    #arch-diagram { width: 100%; height: 500px; border-radius: 12px; overflow: hidden; background: #0d1626; border: 1px solid var(--card-border); }
   </style>
 </head>
 <body>
 
 <!-- ────────────── NAVBAR ────────────── -->
 <nav class="navbar navbar-expand-lg">
-  <a class="navbar-brand" href="#">
+  <a class="navbar-brand" href="#" onclick="showPage('dashboard')">
     <i class="bi bi-shield-check me-2"></i>AI Fault Tolerance Framework
   </a>
-  <div class="ms-auto d-flex align-items-center gap-3">
-    <span class="model-badge"><i class="bi bi-cpu"></i>LSTM · F1 0.9892</span>
-    <span style="font-size:0.8rem; color:var(--text-muted);">
-      <span id="live-dot"></span>Live
-    </span>
+  <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+    <ul class="navbar-nav flex-row gap-1 me-1">
+      <li class="nav-item"><a class="nav-link-pg active" id="nav-dashboard"  href="#" onclick="showPage('dashboard')"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link-pg"        id="nav-deployment" href="#" onclick="showPage('deployment')"><i class="bi bi-cloud-upload me-1"></i>Deployment</a></li>
+      <li class="nav-item"><a class="nav-link-pg"        id="nav-about"      href="#" onclick="showPage('about')"><i class="bi bi-diagram-3 me-1"></i>About</a></li>
+    </ul>
+    <span class="model-badge d-none d-md-inline-flex"><i class="bi bi-cpu"></i>LSTM · F1 0.9892</span>
+    <span style="font-size:0.8rem;color:var(--text-muted);"><span id="live-dot"></span>Live</span>
     <span id="last-updated" class="d-none d-md-inline"></span>
   </div>
 </nav>
+
+<!-- ────────────── TOAST ────────────── -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: DASHBOARD
+══════════════════════════════════════════════════════════════ -->
+<div id="page-dashboard" class="page active">
 
 <!-- ────────────── HERO ────────────── -->
 <div class="hero">
@@ -293,9 +343,6 @@
     </div>
   </div>
 </div>
-
-<!-- ────────────── TOAST ────────────── -->
-<div id="toast-container"></div>
 
 <!-- ────────────── MAIN ────────────── -->
 <div class="container-fluid px-4 py-4">
@@ -364,7 +411,12 @@
                 <th>Status</th>
                 <th>CPU</th>
                 <th>Memory</th>
-                <th>VMs</th>
+                <th>
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="VMs = active workloads assigned to this server. Shows 0 in simulation mode — no tasks are currently in-flight. Submit a task below to assign a workload. In production this reflects real EC2 VM counts after fault-triggered migrations.">
+                  VMs <i class="bi bi-info-circle" style="font-size:0.68rem;opacity:0.55;"></i>
+                </span>
+              </th>
               </tr>
             </thead>
             <tbody id="server-tbody">
@@ -392,6 +444,18 @@
       <!-- TASK SUBMISSION -->
       <div class="section-card">
         <div class="section-title"><i class="bi bi-send-plus"></i> Submit Task</div>
+
+        <!-- Quick-fill examples -->
+        <div class="mb-3">
+          <div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Quick Fill</div>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="quick-chip" onclick="quickFill('web-req-001','normal','http-request')"><i class="bi bi-globe"></i>Web Request</span>
+            <span class="quick-chip" onclick="quickFill('batch-042','normal','process-batch-42')"><i class="bi bi-collection"></i>Batch Job</span>
+            <span class="quick-chip" onclick="quickFill('db-backup-1','critical','database-backup')"><i class="bi bi-database-lock"></i>DB Backup</span>
+            <span class="quick-chip" onclick="quickFill('ml-infer-7','critical','ml-inference')"><i class="bi bi-cpu"></i>ML Inference</span>
+          </div>
+        </div>
+
         <form id="task-form">
           <div class="mb-3">
             <label class="form-label">Task ID <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
@@ -431,35 +495,364 @@
   </div>
 </div>
 
+</div><!-- /page-dashboard -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: DEPLOYMENT
+══════════════════════════════════════════════════════════════ -->
+<div id="page-deployment" class="page">
+  <div class="hero">
+    <div class="container-fluid px-4">
+      <h1><i class="bi bi-cloud-upload me-2" style="-webkit-text-fill-color:#818cf8"></i>Deployment Details</h1>
+      <p>Infrastructure specification, CI/CD pipeline, and experiment comparison results.</p>
+    </div>
+  </div>
+  <div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+
+      <div class="col-lg-6">
+        <div class="section-card h-100">
+          <div class="section-title"><i class="bi bi-cloud"></i> AWS Infrastructure</div>
+          <div class="dep-row"><div class="dep-key">Provider</div><div class="dep-val">Amazon Web Services (AWS)</div></div>
+          <div class="dep-row"><div class="dep-key">Region</div><div class="dep-val">us-east-1 (N. Virginia)</div></div>
+          <div class="dep-row"><div class="dep-key">Instance</div><div class="dep-val"><span class="dep-tag">t3.micro</span> (2 vCPU, 1 GB RAM)</div></div>
+          <div class="dep-row"><div class="dep-key">AMI</div><div class="dep-val" style="font-size:0.76rem;">ami-098e39bafa7e7303d (Amazon Linux 2023)</div></div>
+          <div class="dep-row"><div class="dep-key">Public IP</div><div class="dep-val">34.235.165.89</div></div>
+          <div class="dep-row"><div class="dep-key">Instance ID</div><div class="dep-val" style="font-size:0.76rem;">i-0f85e7afec93457f7</div></div>
+          <div class="dep-row"><div class="dep-key">Web Server</div><div class="dep-val"><span class="dep-tag sky">nginx</span> reverse proxy → port 80</div></div>
+          <div class="dep-row"><div class="dep-key">App Server</div><div class="dep-val"><span class="dep-tag violet">Gunicorn</span> 2 workers on 127.0.0.1:5000</div></div>
+          <div class="dep-row"><div class="dep-key">Process Mgr</div><div class="dep-val"><span class="dep-tag">systemd</span> auto-restart on crash</div></div>
+          <div class="dep-row"><div class="dep-key">Framework</div><div class="dep-val"><span class="dep-tag violet">Flask</span> + <span class="dep-tag violet">PyTorch CPU</span></div></div>
+          <div class="dep-row"><div class="dep-key">Monitoring</div><div class="dep-val">AWS CloudWatch · background thread 30 s</div></div>
+          <div class="dep-row"><div class="dep-key">Cost</div><div class="dep-val">~$0.023 / hr on-demand t3.micro</div></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-stack"></i> Technology Stack</div>
+          <div class="row g-2 mb-3">
+            <div class="col-6"><div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;font-weight:600;">ML / Data</div>
+              <span class="dep-tag violet">PyTorch 2.x</span> <span class="dep-tag violet">scikit-learn</span><br style="margin:3px">
+              <span class="dep-tag violet">pandas</span> <span class="dep-tag violet">numpy</span>
+            </div>
+            <div class="col-6"><div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;font-weight:600;">Cloud / Deploy</div>
+              <span class="dep-tag sky">boto3</span> <span class="dep-tag sky">AWS EC2</span><br style="margin:3px">
+              <span class="dep-tag sky">CloudWatch</span> <span class="dep-tag sky">python-dotenv</span>
+            </div>
+            <div class="col-6"><div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;font-weight:600;">Web / API</div>
+              <span class="dep-tag">Flask</span> <span class="dep-tag">Gunicorn</span> <span class="dep-tag">nginx</span>
+            </div>
+            <div class="col-6"><div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;font-weight:600;">Testing / CI</div>
+              <span class="dep-tag amber">pytest</span> <span class="dep-tag amber">locust</span><br style="margin:3px">
+              <span class="dep-tag amber">GitHub Actions</span>
+            </div>
+          </div>
+          <div class="section-title mt-2"><i class="bi bi-arrow-right-circle"></i> CI/CD Pipeline</div>
+          <div class="ci-step"><i class="bi bi-1-circle-fill"></i><span>Push to <code style="color:#a78bfa">main</code> branch → triggers GitHub Actions</span></div>
+          <div class="ci-step"><i class="bi bi-2-circle-fill"></i><span>Install dependencies on ubuntu-latest runner</span></div>
+          <div class="ci-step"><i class="bi bi-3-circle-fill"></i><span>Run unit + integration + performance tests (pytest)</span></div>
+          <div class="ci-step"><i class="bi bi-4-circle-fill"></i><span>SSH → EC2: <code style="color:#a78bfa">git pull</code> + <code style="color:#a78bfa">pip install</code></span></div>
+          <div class="ci-step"><i class="bi bi-5-circle-fill"></i><span><code style="color:#a78bfa">systemctl restart fault_tolerance_app</code></span></div>
+          <div class="ci-step"><i class="bi bi-6-circle-fill"></i><span>Health check: retry <code style="color:#a78bfa">GET /metrics/summary</code> (6 × 10 s)</span></div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-bar-chart-line"></i> Experiment Results — 5 Runs, 500 Tasks, 10 Servers, 1000 Simulated Steps</div>
+          <div style="overflow-x:auto;">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Configuration</th>
+                  <th>Reliability %</th>
+                  <th>Avg Recovery (s)</th>
+                  <th>Energy (Wh)</th>
+                  <th>Throughput (t/s)</th>
+                  <th>Cost (USD)</th>
+                  <th>Failed Tasks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="dep-tag rose">No Fault Tolerance (Baseline)</span></td>
+                  <td class="worst">99.56%</td><td class="worst">24.0 s</td>
+                  <td>286.40 Wh</td><td>0.489</td><td>$0.0639</td><td class="worst">2.2</td>
+                </tr>
+                <tr>
+                  <td><span class="dep-tag amber">Reactive Fault Tolerance</span></td>
+                  <td>100.0%</td><td>12.0 s</td>
+                  <td>286.41 Wh</td><td>0.491</td><td>$0.0639</td><td>0</td>
+                </tr>
+                <tr style="background:rgba(16,185,129,0.05);">
+                  <td><span class="dep-tag">✓ Proposed AI-Hybrid (This Work)</span></td>
+                  <td class="best">100.0%</td><td class="best">4.0 s</td>
+                  <td>291.41 Wh</td><td class="best">0.491</td><td>$0.0639</td><td class="best">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-2" style="font-size:0.75rem;color:var(--text-muted);">
+            <i class="bi bi-info-circle me-1"></i>
+            Proposed system reduces average recovery time by <strong style="color:#34d399">83%</strong> vs baseline (24 s → 4 s). Full data: <code>results/reports/final_results.csv</code>.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /page-deployment -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: ABOUT / ARCHITECTURE
+══════════════════════════════════════════════════════════════ -->
+<div id="page-about" class="page">
+  <div class="hero">
+    <div class="container-fluid px-4">
+      <h1><i class="bi bi-diagram-3 me-2" style="-webkit-text-fill-color:#818cf8"></i>Architecture &amp; About</h1>
+      <p>AI-Based Hybrid Fault Tolerance Framework for Cloud Data Centers — thesis by Mannat Saluja.</p>
+    </div>
+  </div>
+  <div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+
+      <!-- Architecture Diagram -->
+      <div class="col-12">
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-diagram-3"></i> System Architecture Diagram</div>
+          <div id="arch-diagram"></div>
+          <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.5rem;text-align:center;">
+            Data and control flow across all five layers of the AI Fault Tolerance Framework.
+          </div>
+        </div>
+      </div>
+
+      <!-- Left: layers -->
+      <div class="col-lg-6">
+        <div class="section-card h-100">
+          <div class="section-title"><i class="bi bi-layers"></i> Five-Layer Architecture</div>
+
+          <div class="layer-block" style="border-color:#818cf8;">
+            <div class="layer-name" style="color:#818cf8;">① User Layer</div>
+            <div class="layer-desc">Web, mobile, and enterprise applications submit tasks via the REST API Gateway. No direct contact with infrastructure.</div>
+          </div>
+          <div class="layer-block" style="border-color:#38bdf8;">
+            <div class="layer-name" style="color:#38bdf8;">② Cloud Controller Layer</div>
+            <div class="layer-desc"><strong>API Gateway</strong> (Flask) routes requests · <strong>Resource Manager</strong> maintains server registry · <strong>Task Scheduler</strong> delegates to the Energy-Aware Scheduler · <strong>Monitoring System</strong> polls every 30 s and feeds prediction windows.</div>
+          </div>
+          <div class="layer-block" style="border-color:#c084fc;">
+            <div class="layer-name" style="color:#c084fc;">③ AI Fault Prediction Layer</div>
+            <div class="layer-desc"><strong>Data Collector</strong> pulls CloudWatch metrics or uses the Kaggle VM dataset · <strong>Preprocessor</strong> normalises and builds sliding-window sequences (length 10) · <strong>LSTM Model</strong> (3 layers, hidden=128) returns fault probability · <strong>Predict Engine</strong> runs real-time inference.</div>
+          </div>
+          <div class="layer-block" style="border-color:#fcd34d;">
+            <div class="layer-name" style="color:#fcd34d;">④ Fault Tolerance Layer</div>
+            <div class="layer-desc"><strong>VM Migration</strong> — triggered at confidence &gt; 0.5 · <strong>Adaptive Replication</strong> — only when confidence &gt; 0.75 AND task = critical · <strong>Energy Scheduler</strong> — lowest energy-score server first · <strong>Recovery Manager</strong> — restores state and measures recovery time.</div>
+          </div>
+          <div class="layer-block" style="border-color:#34d399;">
+            <div class="layer-name" style="color:#34d399;">⑤ Physical Data Center Layer</div>
+            <div class="layer-desc">10 simulated servers (8 CPUs, 16 GB each). In AWS: EC2 t3.micro instances monitored by CloudWatch. Storage and network abstracted by the Resource Manager.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: model + contributions -->
+      <div class="col-lg-6 d-flex flex-column gap-4">
+
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-stars"></i> Key Research Contributions</div>
+          <div class="d-flex flex-column gap-3">
+            <div style="padding:0.7rem;background:rgba(79,70,229,0.07);border-radius:10px;border-left:3px solid #818cf8;">
+              <div style="font-weight:700;font-size:0.87rem;color:#a5b4fc;margin-bottom:0.25rem;"><i class="bi bi-1-circle me-1"></i>Proactive vs Reactive</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);">LSTM predicts faults before they occur. Average recovery time reduced by 83% (24 s → 4 s).</div>
+            </div>
+            <div style="padding:0.7rem;background:rgba(16,185,129,0.07);border-radius:10px;border-left:3px solid #34d399;">
+              <div style="font-weight:700;font-size:0.87rem;color:#34d399;margin-bottom:0.25rem;"><i class="bi bi-2-circle me-1"></i>Adaptive Replication</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);">Conditional replication (confidence &gt; 0.75 AND critical) reduces overhead ~40% vs always-on replication.</div>
+            </div>
+            <div style="padding:0.7rem;background:rgba(245,158,11,0.07);border-radius:10px;border-left:3px solid #fcd34d;">
+              <div style="font-weight:700;font-size:0.87rem;color:#fcd34d;margin-bottom:0.25rem;"><i class="bi bi-3-circle me-1"></i>Energy-Aware Scheduling</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);">Tasks placed on lowest energy-score servers first. Idle servers (&lt;15% load) consolidated and suspended.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-cpu"></i> LSTM Model Details</div>
+          <div class="dep-row"><div class="dep-key">Architecture</div><div class="dep-val">3-layer LSTM → FC(128→64) → FC(64→1)</div></div>
+          <div class="dep-row"><div class="dep-key">Input</div><div class="dep-val">10 timesteps × 5 features (window)</div></div>
+          <div class="dep-row"><div class="dep-key">Features</div><div class="dep-val">CPU%, NetIn, NetOut, DiskRead, DiskWrite</div></div>
+          <div class="dep-row"><div class="dep-key">Loss / Optim</div><div class="dep-val">BCEWithLogitsLoss · Adam lr=0.001</div></div>
+          <div class="dep-row"><div class="dep-key">Training Data</div><div class="dep-val">135,873 sequences (Kaggle VM workloads)</div></div>
+          <div class="dep-row"><div class="dep-key">Fault Rate</div><div class="dep-val">20.1% sequences labelled pre-fault</div></div>
+          <div class="mt-3 d-flex flex-wrap gap-1">
+            <span class="metric-pill"><i class="bi bi-check-circle"></i>Accuracy 99.58%</span>
+            <span class="metric-pill sky"><i class="bi bi-bullseye"></i>Precision 99.10%</span>
+            <span class="metric-pill amber"><i class="bi bi-arrow-repeat"></i>Recall 98.75%</span>
+            <span class="metric-pill violet"><i class="bi bi-graph-up-arrow"></i>F1 0.9892</span>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title"><i class="bi bi-person-circle"></i> About This Project</div>
+          <div style="font-size:0.84rem;color:var(--text-muted);line-height:1.65;">
+            <strong style="color:var(--text-main);">Thesis:</strong> Fault Tolerance Mechanisms in Cloud Data Centers<br>
+            <strong style="color:var(--text-main);">Author:</strong> Mannat Saluja<br>
+            <strong style="color:var(--text-main);">Stack:</strong> AWS EC2, Python 3.10, PyTorch, Flask, Gunicorn, nginx<br>
+            <strong style="color:var(--text-main);">Repository:</strong>
+            <a href="https://github.com/Mannatsaluja16/thesis" target="_blank" style="color:var(--brand-light);">github.com/Mannatsaluja16/thesis</a><br><br>
+            Combines LSTM fault prediction with adaptive fault tolerance to improve reliability and energy efficiency in cloud data centres. Proactive detection enables preemptive migration and selective replication only when risk is high.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div><!-- /page-about -->
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- JointJS dependencies for architecture diagram -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/backbone@1.4.1/backbone-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jointjs@3.7.7/dist/joint.min.js"></script>
 <script>
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  function toast(msg, type = 'success') {
-    const el = document.createElement('div');
-    el.className = `toast-msg ${type}`;
-    el.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><span>${msg}</span>`;
+  // ── Page navigation ────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link-pg').forEach(l => l.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    var nav = document.getElementById('nav-' + name);
+    if (nav) nav.classList.add('active');
+    if (name === 'about' && !window._diagramBuilt) buildDiagram();
+    return false;
+  }
+
+  // ── Architecture diagram (JointJS) ─────────────────────────────
+  function buildDiagram() {
+    window._diagramBuilt = true;
+    var graph = new joint.dia.Graph();
+    var el    = document.getElementById('arch-diagram');
+    var W     = el.offsetWidth || 800;
+    var paper = new joint.dia.Paper({
+      el: el,
+      model: graph,
+      width: W, height: 500,
+      background: { color: '#0d1626' },
+      gridSize: 1,
+      interactive: false,
+    });
+
+    function box(id, x, y, w, h, label, fill, stroke) {
+      var r = new joint.shapes.standard.Rectangle({
+        id: id,
+        position: { x: x, y: y }, size: { width: w, height: h },
+        attrs: {
+          body: { fill: fill, stroke: stroke, strokeWidth: 1.5, rx: 9, ry: 9 },
+          label: { text: label, fill: '#f1f5f9', fontSize: 11, fontWeight: 'bold', fontFamily: 'Segoe UI, sans-serif', textWrap: { width: w - 10, height: h, ellipsis: true } }
+        }
+      });
+      graph.addCell(r);
+      return r;
+    }
+
+    function arrow(src, tgt, color) {
+      graph.addCell(new joint.shapes.standard.Link({
+        source: { id: src }, target: { id: tgt },
+        attrs: { line: { stroke: color || '#4f46e5', strokeWidth: 1.5, targetMarker: { type: 'path', d: 'M 6 -3 0 0 6 3 Z', fill: color || '#4f46e5' } } },
+        connector: { name: 'smooth' },
+      }));
+    }
+
+    function layerBg(y, h, fill, label) {
+      graph.addCell(new joint.shapes.standard.Rectangle({
+        position: { x: 10, y: y }, size: { width: W - 20, height: h },
+        attrs: {
+          body: { fill: fill, stroke: 'rgba(255,255,255,0.05)', strokeWidth: 1, rx: 10, ry: 10 },
+          label: { text: label, fill: 'rgba(255,255,255,0.22)', fontSize: 9, fontFamily: 'Segoe UI', fontWeight: '600', textAnchor: 'start', textVerticalAnchor: 'top', refX: 10, refY: 7 }
+        }, z: 0,
+      }));
+    }
+
+    var cx = W / 2;
+    layerBg(6,   60, 'rgba(129,140,248,0.06)', '① USER LAYER');
+    layerBg(76,  75, 'rgba(56,189,248,0.06)',  '② CLOUD CONTROLLER LAYER');
+    layerBg(161, 85, 'rgba(192,132,252,0.06)', '③ AI FAULT PREDICTION LAYER');
+    layerBg(256, 85, 'rgba(252,211,77,0.06)',  '④ FAULT TOLERANCE LAYER');
+    layerBg(351, 60, 'rgba(52,211,153,0.06)',  '⑤ PHYSICAL DATA CENTER LAYER');
+
+    // ① User
+    box('web',  cx-190, 16, 100, 36, 'Web App',      '#1b3a5c', '#38bdf8');
+    box('mob',  cx-45,  16, 100, 36, 'Mobile App',   '#1b3a5c', '#38bdf8');
+    box('ent',  cx+110, 16, 110, 36, 'Enterprise App','#1b3a5c', '#38bdf8');
+
+    // ② Cloud Controller
+    var CW = Math.floor((W - 80) / 4);
+    box('mon',   30,           86, CW, 36, 'Monitoring',      '#1e1b4b', '#818cf8');
+    box('rm',    30+CW+8,      86, CW, 36, 'Resource Mgr',   '#1e1b4b', '#818cf8');
+    box('api',   30+2*(CW+8),  86, CW, 36, 'API Gateway',    '#1e1b4b', '#818cf8');
+    box('sched', 30+3*(CW+8),  86, CW, 36, 'Task Scheduler', '#1e1b4b', '#818cf8');
+
+    // ③ AI Prediction
+    box('dc',   30,           171, CW, 36, 'Data Collector', '#2d1f4b', '#c084fc');
+    box('pre',  30+CW+8,      171, CW, 36, 'Preprocessor',  '#2d1f4b', '#c084fc');
+    box('lstm', 30+2*(CW+8),  171, CW, 36, 'LSTM Model',    '#2d1f4b', '#c084fc');
+    box('pred', 30+3*(CW+8),  171, CW, 36, 'Predict Engine','#2d1f4b', '#c084fc');
+
+    // ④ Fault Tolerance
+    box('mig',  30,           266, CW, 36, 'VM Migration',   '#2d2210', '#fcd34d');
+    box('rep',  30+CW+8,      266, CW, 36, 'Replication Mgr','#2d2210', '#fcd34d');
+    box('enrg', 30+2*(CW+8),  266, CW, 36, 'Energy Sched.',  '#2d2210', '#fcd34d');
+    box('rec',  30+3*(CW+8),  266, CW, 36, 'Recovery Mgr',  '#2d2210', '#fcd34d');
+
+    // ⑤ Physical
+    var PW = Math.floor((W - 80) / 3);
+    box('vms',   30,          361, PW, 36, 'Virtual Machines','#0d2a1f','#34d399');
+    box('store', 30+PW+10,    361, PW, 36, 'Storage Systems', '#0d2a1f','#34d399');
+    box('net',   30+2*(PW+10),361, PW, 36, 'Network Infra',   '#0d2a1f','#34d399');
+
+    // Arrows
+    ['web','mob','ent'].forEach(function(n){ arrow(n,'api','#38bdf8'); });
+    arrow('api','rm','#818cf8'); arrow('api','sched','#818cf8'); arrow('api','mon','#818cf8');
+    arrow('mon','dc','#c084fc'); arrow('dc','pre','#c084fc'); arrow('pre','lstm','#c084fc'); arrow('lstm','pred','#c084fc');
+    arrow('pred','mig','#fcd34d'); arrow('pred','rep','#fcd34d'); arrow('pred','enrg','#fcd34d'); arrow('pred','rec','#fcd34d');
+    arrow('mig','vms','#34d399'); arrow('enrg','vms','#34d399'); arrow('rec','vms','#34d399');
+    arrow('sched','enrg','#818cf8');
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────
+  function toast(msg, type) {
+    type = type || 'success';
+    var el = document.createElement('div');
+    el.className = 'toast-msg ' + type;
+    el.innerHTML = '<i class="bi bi-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i><span>' + msg + '</span>';
     document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    setTimeout(function(){ el.remove(); }, 3500);
   }
 
   function statusBadge(s) {
-    const map = { healthy: 'healthy', warning: 'warning', recovering: 'recovering', failed: 'failed', quarantined: 'failed' };
-    const cls = map[s] || 'warning';
-    const icons = { healthy: 'check-circle-fill', warning: 'exclamation-triangle-fill', recovering: 'arrow-repeat', failed: 'x-circle-fill' };
-    return `<span class="status-badge ${cls}"><i class="bi bi-${icons[cls] || 'circle-fill'}"></i>${s}</span>`;
+    var map = { healthy:'healthy', warning:'warning', recovering:'recovering', failed:'failed', quarantined:'failed', 'at-risk':'warning' };
+    var cls = map[(s||'').toLowerCase()] || 'warning';
+    var icons = { healthy:'check-circle-fill', warning:'exclamation-triangle-fill', recovering:'arrow-repeat', failed:'x-circle-fill' };
+    var label = s === 'quarantined' ? '⚠ QUARANTINED' : s === 'at-risk' ? '⚡ AT-RISK' : s;
+    return '<span class="status-badge ' + cls + '"><i class="bi bi-' + (icons[cls]||'circle-fill') + '"></i>' + label + '</span>';
   }
 
   function miniBar(val, type) {
-    const clamped = Math.min(100, Math.max(0, val));
-    const color = clamped > 80 ? '#f43f5e' : clamped > 60 ? '#f59e0b' : null;
-    const style = color ? `background:${color}` : '';
-    return `
-      <div class="d-flex align-items-center gap-2">
-        <span style="font-size:0.85rem;min-width:38px;">${val.toFixed(1)}%</span>
-        <div class="mini-bar-wrap">
-          <div class="mini-bar ${type}" style="width:${clamped}%;${style}"></div>
-        </div>
-      </div>`;
+    var v = Math.min(100, Math.max(0, val || 0));
+    var color = v > 80 ? '#f43f5e' : v > 60 ? '#f59e0b' : '';
+    return '<div class="d-flex align-items-center gap-2"><span style="font-size:0.85rem;min-width:38px;">' + v.toFixed(1) + '%</span>'
+      + '<div class="mini-bar-wrap"><div class="mini-bar ' + type + '" style="width:' + v + '%;' + (color ? 'background:' + color : '') + '"></div></div></div>';
+  }
+
+  // Quick-fill task form
+  function quickFill(id, priority, payload) {
+    document.getElementById('task-id').value       = id;
+    document.getElementById('task-priority').value = priority;
+    document.getElementById('task-payload').value  = payload;
   }
 
   // ── Fetch metrics ────────────────────────────────────────────────────────
@@ -488,17 +881,24 @@
         tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="bi bi-inbox"></i>No servers registered</div></td></tr>';
         return;
       }
-      tbody.innerHTML = servers.map(s => `
-        <tr>
-          <td>
-            <div style="font-weight:600;font-size:0.88rem;">${s.server_id || s.id || '—'}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">${s.instance_type || 't3.micro'}</div>
-          </td>
-          <td>${statusBadge(s.status || 'healthy')}</td>
-          <td>${miniBar(s.cpu ?? 0, 'cpu')}</td>
-          <td>${miniBar(s.mem ?? 0, 'mem')}</td>
-          <td><span style="font-size:0.85rem;">${(s.vms || []).length}</span></td>
-        </tr>`).join('');
+      tbody.innerHTML = servers.map(s => {
+        const vmCount = (s.vms || []).length;
+        const vmTip = vmCount === 0
+          ? 'No active VM workloads assigned. Submit a task below to assign one.'
+          : vmCount + ' workload(s) currently running on this server.';
+        return '<tr>'
+          + '<td><div style="font-weight:600;font-size:0.88rem;">' + (s.server_id || s.id || '—') + '</div>'
+          +      '<div style="font-size:0.75rem;color:var(--text-muted);">' + (s.instance_type || 't3.micro') + '</div></td>'
+          + '<td>' + statusBadge(s.status || 'healthy') + '</td>'
+          + '<td>' + miniBar(s.cpu ?? 0, 'cpu') + '</td>'
+          + '<td>' + miniBar(s.mem ?? 0, 'mem') + '</td>'
+          + '<td><span data-bs-toggle="tooltip" data-bs-placement="left" title="' + vmTip + '" style="font-size:0.85rem;cursor:default;">'
+          +   vmCount + (vmCount === 0 ? ' <i class="bi bi-info-circle" style="font-size:0.68rem;opacity:0.5;"></i>' : '')
+          + '</span></td></tr>';
+      }).join('');
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+        bootstrap.Tooltip.getOrCreateInstance(el, { trigger: 'hover' });
+      });
     } catch (e) { /* silent */ }
   }
 
@@ -518,20 +918,16 @@
         const isFault = p.fault_predicted;
         const conf = ((p.confidence || 0) * 100).toFixed(1);
         const cls = isFault ? 'fault' : 'normal';
-        return `
-          <div class="pred-item">
-            <div class="pred-dot ${cls} mt-1"></div>
-            <div style="flex:1;min-width:0;">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="pred-label ${cls}">${isFault ? '⚠ Fault Predicted' : '✓ Normal'}</span>
-                <span class="pred-conf">${conf}%</span>
-              </div>
-              <div style="font-size:0.78rem;color:var(--text-muted);margin:2px 0 4px;">${p.instance_id || 'N/A'}</div>
-              <div class="confidence-bar-wrap">
-                <div class="confidence-bar ${cls}" style="width:${conf}%"></div>
-              </div>
-            </div>
-          </div>`;
+        return '<div class="pred-item">'
+          + '<div class="pred-dot ' + cls + ' mt-1"></div>'
+          + '<div style="flex:1;min-width:0;">'
+          +   '<div class="d-flex justify-content-between align-items-center">'
+          +     '<span class="pred-label ' + cls + '">' + (isFault ? '⚠ Fault Predicted' : '✓ Normal') + '</span>'
+          +     '<span class="pred-conf">' + conf + '%</span>'
+          +   '</div>'
+          +   '<div style="font-size:0.78rem;color:var(--text-muted);margin:2px 0 4px;">' + (p.instance_id || 'N/A') + '</div>'
+          +   '<div class="confidence-bar-wrap"><div class="confidence-bar ' + cls + '" style="width:' + conf + '%"></div></div>'
+          + '</div></div>';
       }).join('');
     } catch (e) { /* silent */ }
   }
@@ -555,7 +951,7 @@
       });
       const data = await r.json();
       if (r.ok) {
-        toast(`Task ${data.task_id || ''} submitted on ${data.assigned_server || 'server'}`, 'success');
+        toast('Task ' + (data.task_id || '') + ' submitted → ' + (data.assigned_server || 'server'), 'success');
         document.getElementById('task-id').value = '';
         document.getElementById('task-payload').value = '';
         fetchMetrics();
@@ -576,6 +972,11 @@
         'Updated ' + new Date().toLocaleTimeString();
     });
   }
+
+  // Bootstrap tooltip init (static elements)
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+    new bootstrap.Tooltip(el, { trigger: 'hover' });
+  });
 
   refresh();
   setInterval(refresh, 10000);

@@ -11,6 +11,9 @@ __pycache__/
 *.pem
 results/plots/
 results/reports/
+# Allow generated results to be committed:
+!results/plots/*.png
+!results/reports/*.csv
 .DS_Store
 *.egg-info/
 dist/
