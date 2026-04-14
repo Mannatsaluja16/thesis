@@ -1,6 +1,7 @@
 import logging
+import os
 import time
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 from src.cloud_controller.task_scheduler import submit_task, get_all_tasks
 from src.cloud_controller.resource_manager import get_all_servers
@@ -11,11 +12,17 @@ from src.cloud_controller.monitoring_system import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+_tmpl_dir = os.path.join(os.path.dirname(__file__), "templates")
+app = Flask(__name__, template_folder=_tmpl_dir)
 
 # --------------------------------------------------------------------------- #
 #  Routes
 # --------------------------------------------------------------------------- #
+
+@app.route("/", methods=["GET"])
+def dashboard():
+    return render_template("index.html")
+
 
 @app.route("/task/submit", methods=["POST"])
 def submit():
